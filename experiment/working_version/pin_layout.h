@@ -30,10 +30,10 @@
 #define PIN_PARKING_LED_4   25
 
 // entry/exit gate LED
-#define PIN_ENTRY_RED       26
-#define PIN_ENTRY_GREEN     27
-#define PIN_EXIT_RED        28
-#define PIN_EXIT_GREEN      29
+#define PIN_ENTRY_GREEN     26
+#define PIN_ENTRY_RED       27
+#define PIN_EXIT_GREEN      28
+#define PIN_EXIT_RED        29
 
 // stall sensor in paking lot
 #define PIN_STALL_SENSOR_1  30

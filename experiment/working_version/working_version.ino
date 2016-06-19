@@ -18,7 +18,7 @@
   *  @see
   *
 **/
-
+#include "global.h"
 #include <Servo.h>
 
 // for contorl a servo motor
@@ -33,6 +33,8 @@ void setup()
 {
     //init serial
     Serial.begin(115200);
+
+    delay(DELAY_100MS);
 
     //init board pin
     InitPin();

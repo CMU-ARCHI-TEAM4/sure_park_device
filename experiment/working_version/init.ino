@@ -32,7 +32,7 @@ void InitPin(void)
     for (i = PIN_PARKING_LED_1; i <= PIN_PARKING_LED_4; i++)
     {
         pinMode(i, OUTPUT);
-        digitalWrite(i, HIGH);
+        digitalWrite(i, LOW);
     }
 
     // entry/exit gate LED
@@ -40,8 +40,10 @@ void InitPin(void)
     {
         pinMode(i, OUTPUT);
 
-        if(i == PIN_ENTRY_RED || i == PIN_EXIT_RED)
+        if( (i == PIN_ENTRY_GREEN) || (i == PIN_EXIT_RED) )
             digitalWrite(i, LOW);
+        else
+            digitalWrite(i, HIGH);
     }
 
     // init servo motor to close
