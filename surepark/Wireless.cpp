@@ -115,7 +115,7 @@ void Wireless::readData()
 	while (client.available()) {
 		msg += client.read();
 		Serial.println(msg);
-		
+		// time
 	}
 }
 

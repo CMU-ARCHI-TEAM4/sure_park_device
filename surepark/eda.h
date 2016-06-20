@@ -1,19 +1,27 @@
 #pragma once
 
+#ifdef UNITTEST
+#include "swRTC.h"
+#else
+//#include <core_build_options.h>
+//#include <swRTC.h>
+#endif
+
 #include "arduino.h"
 #include "WiFi.h"
 #include "SPI.h"
 #include "Servo.h"
-#include "swRTC.h"
+
 
 #ifdef UNITTEST
 #define compare(x,y)			x.find(y)
 #define delMessage(x,y,z)		x.erase(0, y + z);
 #define pCompare(x,y)			x->find(y)
 #define pDelMassge(x,y,z)		x->erase(0, y + z);
+#define MASTERCODE				"ma"
 #else
 #define compare(x,y)			x.indexOf(y)
-#define delMassge(x,y,z)		x.remove(0, y + z);
+#define delMessage(x,y,z)		x.remove(0, y + z);
 #define pCompare(x,y)			x->indexOf(y)
 #define pDelMassge(x,y,z)		x->remove(0, y + z);
 #endif
@@ -35,6 +43,7 @@
 #define Stall2SensorPin			31
 #define Stall3SensorPin			32
 #define Stall4SensorPin			33
+
 
 // device name
 #define CONSOLE			"ser"
@@ -81,7 +90,7 @@ class Event_generator
 public:
 	Event_generator();
 	~Event_generator();
-	static unsigned char regist_event(String message);
+	static unsigned char set_event(String message);
 	static String * get_event();
 private:
 	static String Buff[0x10];

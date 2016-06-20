@@ -41,7 +41,7 @@ void Console::engine(String * message)
 #else
 	Serial.println(*message);
 #endif
-	Event_generator::regist_event(*message);
+	Event_generator::set_event(*message);
 }
 
 void pinMode(unsigned char pinNum, unsigned char mode);

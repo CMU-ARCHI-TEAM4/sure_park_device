@@ -13,9 +13,11 @@ String inputString = "" ;
 Factory * factory = new Factory;
 Device * dev_instance[0xF] = { nullptr, };
 
+int timeTick = false;
+
 void timerCallback()
 {
-  Event_generator::regist_event(TIME_EVENT);
+  timeTick = true;
 }
 
 void setup() {
@@ -28,10 +30,10 @@ void setup() {
   dev_instance[0] = factory->createConsoleInstance();
   dev_instance[1] = factory->createGateServoInstance(EntryGateServoPin);
   dev_instance[2] = factory->createGateServoInstance(ExitGateServoPin);
-  dev_instance[3] = factory->createParkingPlaceInstance(1, ParkingStall1LED);
-  dev_instance[4] = factory->createParkingPlaceInstance(2, ParkingStall2LED);
-  dev_instance[5] = factory->createParkingPlaceInstance(3, ParkingStall3LED);
-  dev_instance[6] = factory->createParkingPlaceInstance(4, ParkingStall4LED);
+  dev_instance[3] = factory->createParkingPlaceInstance(1, ParkingStall1LED, Stall1SensorPin);
+  dev_instance[4] = factory->createParkingPlaceInstance(2, ParkingStall2LED, Stall2SensorPin);
+  dev_instance[5] = factory->createParkingPlaceInstance(3, ParkingStall3LED, Stall3SensorPin);
+  dev_instance[6] = factory->createParkingPlaceInstance(4, ParkingStall4LED, Stall4SensorPin);
   dev_instance[7] = factory->createWirelessInstance("LGArchi_Guest1","16swarchitect", server, 7777);
 }
 
@@ -42,6 +44,10 @@ void loop(void)
   if (message = Event_generator::get_event()) {
     for (; *loop != nullptr; loop++) (*loop)->dispatcher(*message) ;
   }
+  if (timeTick) {
+    Event_generator::set_event(TIME_EVENT);
+    timeTick = false;
+  }
 }
 
 void serialEvent() {
@@ -49,7 +55,7 @@ void serialEvent() {
     char inch = (char)Serial.read();
     if (inch == '\n') {
       // event occurred 
-      Event_generator::regist_event("ser " + inputString);
+      Event_generator::set_event("ser " + inputString);
       inputString = "" ;
     }
     else if (inch != '\0'){

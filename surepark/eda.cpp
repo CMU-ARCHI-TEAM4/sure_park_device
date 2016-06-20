@@ -10,13 +10,13 @@ Event_generator::~Event_generator()
 {
 }
 
-unsigned char Event_generator::regist_event(String message)
+unsigned char Event_generator::set_event(String message)
 {
-	if (compare(message, TIME_EVENT) != 0)
-		Serial.println("event:" + message);
+	if (compare(message, TIME_EVENT))
+		Serial.println(" set event:" + message);
 
 	if ((writePtr + 1) == readPtr) {
-		Serial.println("Buffer Overflow") ; 
+		Serial.println("Bacuse of buffer overflow, Data will be lost.") ; 
 	}
 	else {
 		Buff[writePtr&0x0F] = message;

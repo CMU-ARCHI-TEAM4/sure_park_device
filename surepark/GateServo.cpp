@@ -68,13 +68,13 @@ void GateServo::engine(String * message)
 			digitalWrite(EntryGateGreenLED, LOW);
 			digitalWrite(EntryGateRedLED, HIGH);
 			sndMsg += ENTRYGATE;
-			Event_generator::regist_event(sndMsg + "0");
+			Event_generator::set_event(sndMsg + "0");
 		}
 		else {
 			digitalWrite(ExitGateGreenLED, LOW);
 			digitalWrite(ExitGateRedLED, HIGH);
 			sndMsg += EXITGATE;
-			Event_generator::regist_event(sndMsg + "0");
+			Event_generator::set_event(sndMsg + "0");
 		}
 	}
 	else if (pCompare(message,OFF)==0) {
@@ -83,13 +83,13 @@ void GateServo::engine(String * message)
 			digitalWrite(EntryGateGreenLED, HIGH);
 			digitalWrite(EntryGateRedLED, LOW);
 			sndMsg += ENTRYGATE;
-			Event_generator::regist_event(sndMsg + "1");
+			Event_generator::set_event(sndMsg + "1");
 		}
 		else {
 			digitalWrite(ExitGateGreenLED, HIGH);
 			digitalWrite(ExitGateRedLED, LOW);
 			sndMsg += EXITGATE;
-			Event_generator::regist_event(sndMsg + "1");
+			Event_generator::set_event(sndMsg + "1");
 		}
 	}
 	else if (pCompare(message,IR_DETECT)==0) {
@@ -103,12 +103,12 @@ void GateServo::engine(String * message)
 			chatteringTime = 10;
 			if (EntryGateServoPin == gateNum) {
 				sndMsg += ENTRYSENSOR;
-				Event_generator::regist_event(sndMsg + "0");
+				Event_generator::set_event(sndMsg + "0");
 			}
 			else {
 				sndMsg += EXITSENSOR;
-				Event_generator::regist_event(sndMsg + "0");
-				Event_generator::regist_event(msgEXITGATEOPEN);
+				Event_generator::set_event(sndMsg + "0");
+				Event_generator::set_event(msgEXITGATEOPEN);
 			}
 		}
 		else {
