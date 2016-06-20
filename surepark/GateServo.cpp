@@ -3,7 +3,7 @@
 
 
 GateServo::GateServo(unsigned char pinNum)
-	: detect(0)
+	: chatteringTime(0)
 {
 	gateObj = new Servo ;
 	gateObj->attach(pinNum);
@@ -42,7 +42,7 @@ unsigned char GateServo::dispatcher(String message)
 {
 	//TODO : insert dispatcher
 	if (compare(message,myName) == 0) {
-		delMassge(message, myName, 1);
+		delMessage(message, myName.length(), 1);
 		engine(&message);
 		return 1;
 	}
@@ -98,16 +98,21 @@ void GateServo::engine(String * message)
 		else 
 			state = digitalRead(ExitBeamRcvr);
 
-		if (state) {
-			// not detect
-			if (detect)
-				detect--;
+		if ((!chatteringTime) && (sensor_status != state) ) {
+			sensor_status = state;
+			chatteringTime = 10;
+			if (EntryGateServoPin == gateNum) {
+				sndMsg += ENTRYSENSOR;
+				Event_generator::regist_event(sndMsg + "0");
+			}
+			else {
+				sndMsg += EXITSENSOR;
+				Event_generator::regist_event(sndMsg + "0");
+				Event_generator::regist_event(msgEXITGATEOPEN);
+			}
 		}
-		else
-		{
-			// detect
-			if (!detect)
-				detect = 10;
+		else {
+			chatteringTime--;
 		}
 	}
 }

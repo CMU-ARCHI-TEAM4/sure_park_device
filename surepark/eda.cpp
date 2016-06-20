@@ -79,9 +79,9 @@ Device * Factory::createGateServoInstance(unsigned char gateName)
 	return new GateServo(gateName);
 }
 
-Device * Factory::createParkingPlaceInstance(unsigned char num, unsigned char pinNum)
+Device * Factory::createParkingPlaceInstance(unsigned char num, unsigned char pinNum, unsigned char sensorPinNum)
 {
-	return new ParkingPlace(num, pinNum);
+	return new ParkingPlace(num, pinNum, sensorPinNum);
 }
 
 Device * Factory::createWirelessInstance(char * ssid, char * password, IPAddress server, int portId)

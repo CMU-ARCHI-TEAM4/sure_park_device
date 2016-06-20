@@ -10,6 +10,7 @@ enum WIFICMDSTATUS
 	eDEVICEINFO,
 	ePINGECHO,
 	eENTRYSENSOR,
+	eEXITSENSOR,
 	eCONFIRMATION,
 	eENTRYGATE,
 	ePARKING,
@@ -50,7 +51,7 @@ unsigned char Wireless::dispatcher(String message)
 {
 	//TODO : insert dispatcher
 	if (compare(message,myName) == 0) {
-		delMassge(message, myName, 1);
+		delMessage(message, myName.length(), 1);
 		engine(&message);
 		return 1;
 	}
@@ -65,7 +66,6 @@ unsigned char Wireless::dispatcher(String message)
 void Wireless::engine(String * message)
 {
 	String sendMsg;
-	macaddress(&sendMsg);
 
 	switch (actionCheck(message)) {
 	case eNOACTION :
@@ -73,35 +73,56 @@ void Wireless::engine(String * message)
 	case eCONNECTION:
 		break;
 	case eDEVICEINFO:
-		macaddress(&sendMsg);
-		Serial.println(sendMsg + "4");
-		client.println(sendMsg + "4");
+		msgHeader(msgREQUEST, &sendMsg);
+		msgHeader(DEVICEINFO, &sendMsg);
+		sendMessageToWiFi(sendMsg + "4");
 		break;
 	case ePINGECHO:
-		Serial.println("PINGECHO enabled\n");
+		msgHeader(msgREQUEST, &sendMsg);
+		sendMessageToWiFi(sendMsg + "2");
 		break;
 	case eENTRYSENSOR:
+		msgHeader(msgREQUEST, &sendMsg);
+		sendMessageToWiFi(sendMsg + (*message));
+		break;
+	case eEXITSENSOR :
+		msgHeader(msgREQUEST, &sendMsg);
+		sendMessageToWiFi(sendMsg + (*message));
 		break;
 	case eCONFIRMATION:
+		msgHeader(msgRESPONSE, &sendMsg);
 		break;
 	case eENTRYGATE:
 	case eEXITGATE:
-		Serial.println(sendMsg+(*message));
-		client.println(sendMsg+(*message));
+		msgHeader(msgREQUEST, &sendMsg);
+		sendMessageToWiFi(sendMsg + (*message));
 		break;
 	case ePARKING:
-		Serial.println(sendMsg+(*message));
-		client.println(sendMsg+(*message));
+		msgHeader(msgREQUEST, &sendMsg);
+		sendMessageToWiFi(sendMsg + (*message));
 		break;
 	case eREADDATA:
-		while (client.available()) {
-			char c = client.read();
-			Serial.write(c);
-		}
+		readData();
 		break;
 	default :
 		break;
 	}
+}
+
+void Wireless::readData()
+{
+	String msg;
+	while (client.available()) {
+		msg += client.read();
+		Serial.println(msg);
+		
+	}
+}
+
+void Wireless::sendMessageToWiFi(String message)
+{
+	Serial.println(message);
+	client.println(message);
 }
 
 
@@ -110,6 +131,8 @@ int Wireless::actionCheck(String * message)
 	if (client.connected()) {
 		if (pCompare(message, ENTRYSENSOR) == 0)
 			return eENTRYSENSOR;
+		if (pCompare(message, EXITSENSOR) == 0)
+			return eEXITSENSOR;
 		if (pCompare(message, ENTRYGATE) == 0)
 			return eENTRYGATE;
 		if (pCompare(message, EXITGATE) == 0)
@@ -139,9 +162,9 @@ int Wireless::actionCheck(String * message)
 	return eNOACTION;
 }
 
-void Wireless::macaddress(String * sendmsg)
+void Wireless::msgHeader(String type, String * sendmsg)
 {
-	*sendmsg += "0 ";
+	*sendmsg += msgREQUEST;
 	*sendmsg += mac[5];
 	*sendmsg += ":";
 	*sendmsg += mac[4];

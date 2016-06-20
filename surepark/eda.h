@@ -4,18 +4,37 @@
 #include "WiFi.h"
 #include "SPI.h"
 #include "Servo.h"
+#include "swRTC.h"
 
 #ifdef UNITTEST
 #define compare(x,y)			x.find(y)
-#define delMassge(x,y,z)		x.erase(0, y.length() + z);
+#define delMessage(x,y,z)		x.erase(0, y + z);
 #define pCompare(x,y)			x->find(y)
-#define pDelMassge(x,y,z)		x->erase(0, y.length() + z);
+#define pDelMassge(x,y,z)		x->erase(0, y + z);
 #else
 #define compare(x,y)			x.indexOf(y)
-#define delMassge(x,y,z)		x.remove(0, y.length() + z);
+#define delMassge(x,y,z)		x.remove(0, y + z);
 #define pCompare(x,y)			x->indexOf(y)
-#define pDelMassge(x,y,z)		x->remove(0, y.length() + z);
+#define pDelMassge(x,y,z)		x->remove(0, y + z);
 #endif
+
+// Arduino device pin set
+#define ParkingStall1LED		22
+#define ParkingStall2LED		23
+#define ParkingStall3LED		24
+#define ParkingStall4LED		25
+#define EntryGateGreenLED		26
+#define EntryGateRedLED			27
+#define ExitGateGreenLED		28
+#define ExitGateRedLED			29
+
+#define EntryBeamRcvr			34
+#define ExitBeamRcvr			35
+
+#define Stall1SensorPin			30
+#define Stall2SensorPin			31
+#define Stall3SensorPin			32
+#define Stall4SensorPin			33
 
 // device name
 #define CONSOLE			"ser"
@@ -31,8 +50,12 @@
 #define STALLSENSOR		"stall"
 
 // WIFI event message
+#define msgREQUEST		"0 "
+#define msgRESPONSE		"1 "
 #define READ_WIFI		"wifir"
+#define DEVICEINFO		"0 "
 #define ENTRYSENSOR		"3 "
+#define EXITSENSOR		"8 "
 #define ENTRYGATE		"5 "
 #define EXITGATE		"7 "
 #define PARKING			"6 "
@@ -41,23 +64,17 @@
 #define ON				"on"
 #define OFF				"off"
 
+// default message define 
+#define msgEXITGATEOPEN		"gseexit on"
+#define msgEXITGATECLOSE	"gseexit off"
+#define msgENTRYGATEOPEN	"gseentry on"
+#define msgENTRYGATECLOSE	"gseentry off"
+
 // System configuration value
 #define EntryGateServoPin 5
 #define ExitGateServoPin 6
 #define Open  90
 #define Close 0
-
-#define ParkingStall1LED  22
-#define ParkingStall2LED  23
-#define ParkingStall3LED  24
-#define ParkingStall4LED  25
-#define EntryGateGreenLED 26
-#define EntryGateRedLED   27
-#define ExitGateGreenLED  28
-#define ExitGateRedLED    29
-
-#define EntryBeamRcvr		34
-#define ExitBeamRcvr		35
 
 class Event_generator
 {
@@ -115,22 +132,25 @@ protected:
 	String myName;
 private:
 	unsigned char gateNum;
-protected:
-	int detect;
+	unsigned char sensor_status;
+	unsigned char chatteringTime;
 };
 
 class ParkingPlace :
 	public Device
 {
 public:
-	ParkingPlace(unsigned char num, unsigned char pinNum);
+	ParkingPlace(unsigned char num, unsigned char pinNum, unsigned char sensorPinNum);
 	~ParkingPlace();
 	unsigned char dispatcher(String message);
 	void engine(String * message);
 protected:
 	String myName;
+	long ProximityVal(unsigned char Pin);
+	long sensorVal;
 private:
 	unsigned char ledNum;
+	unsigned char sensorPin;
 };
 
 class Wireless :
@@ -156,7 +176,9 @@ protected:
 	String myName;
 	int pingEchoTime;
 	int actionCheck(String * message);
-	void macaddress(String * sendmsg);
+	void msgHeader(String type, String * sendmsg);
+	void readData();
+	void sendMessageToWiFi(String message);
 };
 
 class watch
@@ -176,7 +198,7 @@ public:
 	~Factory();
 	Device * createConsoleInstance() ;
 	Device * createGateServoInstance(unsigned char gateName);
-	Device * createParkingPlaceInstance(unsigned char num, unsigned char pinNum);
+	Device * createParkingPlaceInstance(unsigned char num, unsigned char pinNum, unsigned char sensorPinNum);
 	Device * createWirelessInstance(char * ssid, char * password, IPAddress server, int portId);
 };
 
