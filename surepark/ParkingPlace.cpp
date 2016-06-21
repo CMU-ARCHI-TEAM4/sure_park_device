@@ -1,15 +1,22 @@
 #include "stdafx.h"
 #include "eda.h"
 
+#define CHATTERINGTIME		5000/200	
 
 ParkingPlace::ParkingPlace(unsigned char num, unsigned char pinNum, unsigned char sensorPinNum)
+	:chatteringTime(0)
 {
-	myName += PARKINGPLACE;
-	myName += num;
+	long val;
+	//myName += PARKINGPLACE;
+	myName = num;
+	parkingNum = num;
 	ledNum = pinNum;
 	sensorPin = sensorPinNum;
 	pinMode(ledNum, OUTPUT);
-	sensorVal = ProximityVal(sensorPin);
+
+	val = ProximityVal(sensorPin);
+	if (val < 70) presentParkingStatus = 1;
+	else presentParkingStatus = 0;
 }
 
 
@@ -23,32 +30,65 @@ unsigned char ParkingPlace::dispatcher(String message)
 		delMessage(message, myName.length(), 1);
 		engine(&message);
 	}
-	else if (0 == compare(message, TIME_EVENT)) {
-		delMessage(message, sizeof(TIME_EVENT), 1);
+	if (0 == compare(message, ALLPLACE)) {
+		delMessage(message, sizeof(ALLPLACE), 0);
 		engine(&message);
 	}
+	else
+		engine(&message);
 	return 0;
 }
 
 void ParkingPlace::engine(String * message)
 {
 	long val;
-	long gap;
-	String str;
-	if (pCompare(message,OFF)==0) {
+	unsigned char carIn = false;
+	String sndMsg = WIFI;
+	sndMsg += " ";
+
+	if (pCompare(message, ON) == 0) {
 		digitalWrite(ledNum, HIGH);
 	}
-	else if (pCompare(message, ON)==0) {
+	else if (pCompare(message, OFF) == 0) {
 		digitalWrite(ledNum, LOW);
 	}
-	else {
+	else if (pCompare(message, STALLSENSOR) == 0) {
+		chatteringTime = ~chatteringTime;
 		// read stall sensor
-		val = ProximityVal(sensorPin);
-		gap = (sensorVal - val)*(sensorVal - val);
-		str = myName;
-		str += " Sensor Gap = ";
-		str += gap;
-		Serial.println(str);
+	}
+	else if (0 == pCompare(message, myName)) {
+		digitalWrite(ledNum, HIGH);
+		pDelMassge(message, myName.length(), +1);
+		confirmationID = *message;
+	}
+	else if (pCompare(message, TIME_EVENT) == 0) {
+		if (chatteringTime) {
+			chatteringTime--;
+		}
+		else {
+			val = ProximityVal(sensorPin);
+			if (val < 65) 
+				carIn = 1;
+			else 
+				carIn = 0;
+
+			if (presentParkingStatus != carIn) {
+				presentParkingStatus = carIn;
+				if (carIn) {
+					Event_generator::set_event(myName+" off");
+				}
+				chatteringTime = 2000 / 200;
+				sndMsg += PARKING;
+				sndMsg += carIn;
+				sndMsg += " ";
+				sndMsg += myName;
+				sndMsg += " ";
+				sndMsg += "0 ";// charging infomation
+				sndMsg += confirmationID;
+				sndMsg += "0";
+				Event_generator::set_event(sndMsg);
+			}
+		}
 	}
 }
 

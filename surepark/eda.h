@@ -3,8 +3,8 @@
 #ifdef UNITTEST
 #include "swRTC.h"
 #else
-//#include <core_build_options.h>
-//#include <swRTC.h>
+//#include "core_build_options.h"
+//#include "swRTC.h"
 #endif
 
 #include "arduino.h"
@@ -48,9 +48,10 @@
 // device name
 #define CONSOLE			"ser"
 #define GATESERVO		"gse"
-#define PARKINGPLACE	"pla"
+//#define PARKINGPLACE	""
 #define TIME_EVENT		"tim"
 #define WIFI			"wif"
+#define ALLPLACE		"all"
 
 // second device name
 #define ENTRY			"entry"
@@ -61,6 +62,7 @@
 // WIFI event message
 #define msgREQUEST		"0 "
 #define msgRESPONSE		"1 "
+
 #define READ_WIFI		"wifir"
 #define DEVICEINFO		"0 "
 #define ENTRYSENSOR		"3 "
@@ -68,6 +70,7 @@
 #define ENTRYGATE		"5 "
 #define EXITGATE		"7 "
 #define PARKING			"6 "
+#define SERIALMODE		"off"
 
 // value
 #define ON				"on"
@@ -78,6 +81,12 @@
 #define msgEXITGATECLOSE	"gseexit off"
 #define msgENTRYGATEOPEN	"gseentry on"
 #define msgENTRYGATECLOSE	"gseentry off"
+
+#define msgParkingPlace1On	"pla1 on"
+#define msgParkingPlace2On	"pla2 on"
+#define msgParkingPlace3On	"pla3 on"
+#define msgParkingPlace4On	"pla4 on"
+#define msgParkingPlace1Off	"pla1 off"
 
 // System configuration value
 #define EntryGateServoPin 5
@@ -141,8 +150,13 @@ protected:
 	String myName;
 private:
 	unsigned char gateNum;
+	unsigned char greenLED;
+	unsigned char redLED;
+	unsigned char beamRcv;
+
 	unsigned char sensor_status;
 	unsigned char chatteringTime;
+	unsigned char gateCloseTime;
 };
 
 class ParkingPlace :
@@ -156,10 +170,14 @@ public:
 protected:
 	String myName;
 	long ProximityVal(unsigned char Pin);
-	long sensorVal;
 private:
 	unsigned char ledNum;
 	unsigned char sensorPin;
+	unsigned char parkingNum;
+	unsigned char presentParkingStatus;
+	unsigned char chatteringTime;
+	String confirmationID;
+
 };
 
 class Wireless :
@@ -172,18 +190,23 @@ public:
 	unsigned char dispatcher(String message);
 	void engine(String * message);
 protected:
+	void connectionCheck();
 	IPAddress ip;
-	byte mac[6];
 	IPAddress subnet;
 	long rssi;
 	byte encryption;
 	WiFiClient client;
 	IPAddress serverIp;
 	int serverPort;
-	int waitTimeforConnection; 
-	int serverConnected;
+	int serverConnect;
 	String myName;
 	int pingEchoTime;
+	char * routerSSID ;
+	char * routerPassword;
+	String mac;
+
+	int serialMode;
+
 	int actionCheck(String * message);
 	void msgHeader(String type, String * sendmsg);
 	void readData();
