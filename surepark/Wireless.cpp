@@ -13,7 +13,6 @@ enum WIFICMDSTATUS
 {
 	eNOACTION,
 	eCONNECTION,
-	eDEVICEINFO,
 	ePINGECHO,
 	eENTRYSENSOR,
 	eEXITSENSOR,
@@ -51,7 +50,6 @@ Wireless::Wireless(char * ssid, char * password, IPAddress server, int portId)
 	mac += macByte[1];
 	mac += ":";
 	mac += macByte[0];
-	mac += " ";
 }
 
 Wireless::~Wireless()
@@ -61,13 +59,13 @@ Wireless::~Wireless()
 unsigned char Wireless::dispatcher(String message)
 {
 	//TODO : insert dispatcher
-	if (compare(message,myName) == 0) {
-		delMessage(message, myName.length(), 1);
+	if (0 == msgCompare(message, 1, myName)) {
 		engine(&message);
 		return 1;
 	}
-	else if (compare(message,TIME_EVENT) == 0) {
-		message = READ_WIFI;
+	else if (0 == msgCompare(message, 1, TIMETICK)) {
+		message = myName;
+		InsStr(message, READWIFI);
 		engine(&message);
 		return 1;
 	}
@@ -77,7 +75,7 @@ unsigned char Wireless::dispatcher(String message)
 void Wireless::connectionCheck()
 {
 	int wifi_status;
-	String sendMsg;
+	String sndMsg = msgREQUEST;
 
 	switch (serverConnect) {
 	case 0:
@@ -90,9 +88,12 @@ void Wireless::connectionCheck()
 		if (client.connect(serverIp, serverPort) == SUCCESS) {
 			Serial.println("Sever is connected");
 
-			msgHeader(msgREQUEST, &sendMsg);
-			msgHeader(DEVICEINFO, &sendMsg);
-			sendMessageToWiFi(sendMsg + "4");
+			InsStr(sndMsg, mac);
+			InsStr(sndMsg, DEVICEINFO);
+			InsStr(sndMsg, mac);
+			InsStr(sndMsg, Device::total_);
+			sendMessageToWiFi(sndMsg);
+			pingEchoTime = 0;
 		}
 		else {
 			Serial.println("connecting is failed");
@@ -144,76 +145,77 @@ void Wireless::connectionCheck()
 
 void Wireless::engine(String * message)
 {
-	String sendMsg;
+	String sndMsg = msgREQUEST;
 
 	if (!serialMode) 
 		connectionCheck();
 
 	switch (actionCheck(message)) {
-	case eNOACTION :
-		break;
-	case eCONNECTION:
-		break;
-	case eDEVICEINFO:
-		msgHeader(msgREQUEST, &sendMsg);
-		msgHeader(DEVICEINFO, &sendMsg);
-		sendMessageToWiFi(sendMsg + "4");
-		break;
 	case ePINGECHO:
-		msgHeader(msgREQUEST, &sendMsg);
-		sendMsg += "2 ";
-		sendMsg += "0";
-		sendMessageToWiFi(sendMsg + "2");
+		InsStr(sndMsg, mac);
+		InsStr(sndMsg, HEARTBEAT);
+		InsStr(sndMsg, TIMEINFO);
+		sendMessageToWiFi(sndMsg);
 		break;
 	case eENTRYSENSOR:
-		msgHeader(msgREQUEST, &sendMsg);
-		sendMessageToWiFi(sendMsg + (*message));
+		InsStr(sndMsg, mac);
+		pDelMassge(message, 1, 1);
+		InsStr(sndMsg, *message);
+		sendMessageToWiFi(sndMsg);
 		break;
 	case eEXITSENSOR :
-		msgHeader(msgREQUEST, &sendMsg);
-		sendMessageToWiFi(sendMsg + (*message));
+		InsStr(sndMsg, mac);
+		pDelMassge(message, 1, 1);
+		InsStr(sndMsg, *message);
+		sendMessageToWiFi(sndMsg);
 		break;
 	case eCONFIRMATION:
-		msgHeader(msgRESPONSE, &sendMsg);
 		break;
 	case eENTRYGATE:
+		InsStr(sndMsg, mac);
+		pDelMassge(message, 1, 1);
+		InsStr(sndMsg, *message);
+		sendMessageToWiFi(sndMsg);
+		break;
 	case eEXITGATE:
-		msgHeader(msgREQUEST, &sendMsg);
-		sendMessageToWiFi(sendMsg + (*message));
+		InsStr(sndMsg, mac);
+		pDelMassge(message, 1, 1);
+		InsStr(sndMsg, *message);
+		sendMessageToWiFi(sndMsg);
 		break;
 	case ePARKING:
-		msgHeader(msgREQUEST, &sendMsg);
-		sendMessageToWiFi(sendMsg + (*message));
+		InsStr(sndMsg, mac);
+		pDelMassge(message, 1, 1);
+		InsStr(sndMsg, *message);
+		sendMessageToWiFi(sndMsg);
 		break;
 	case eSERIALMOD :
 		serialMode = (serialMode) ? 0 : 1;
 		if (!serialMode) serverConnect = 10000 / 200;
 		break;
-	case eREADDATA:
+	default :
 		readData();
 		break;
-	default :
-		break;
 	}
+	sndMsg = "";
 }
 
 int Wireless::actionCheck(String * message)
 {
-	if (pCompare(message, ENTRYSENSOR) == 0)
+	if (0 == msgCompare(*message,2, ENTRYSENSOR))
 		return eENTRYSENSOR;
-	if (pCompare(message, EXITSENSOR) == 0)
+	if (0 == msgCompare(*message, 2, EXITSENSOR))
 		return eEXITSENSOR;
-	if (pCompare(message, ENTRYGATE) == 0)
+	if (0 == msgCompare(*message,2, ENTRYGATE))
 		return eENTRYGATE;
-	if (pCompare(message, EXITGATE) == 0)
+	if (0 == msgCompare(*message, 2, EXITGATE))
 		return eEXITGATE;
-	if (pCompare(message, PARKING) == 0)
+	if (0 == msgCompare(*message, 2, PARKING))
 		return ePARKING;
-	if (pCompare(message, SERIALMODE) == 0)
+	if (0 == msgCompare(*message, 2, CONSOLE))
 		return eSERIALMOD;
 	if (pingEchoTime) {
 		pingEchoTime--;
-
 		return eREADDATA;
 	}
 	else {
@@ -227,33 +229,41 @@ int Wireless::actionCheck(String * message)
 void Wireless::readData()
 {
 	String msg ="";
-	String sndMsg;
+	String sndMsg = "";
 	char available = 0;
 	char c;
+	int end;
 
 	while (client.available()) {
 		available = 1;
 		c = client.read();
+#ifdef UNITTEST
+		msg += c;
+#else
 		msg += String(c) ;
+#endif
 	}
-	if (available)
+	if (available) {
+		for (end = msg.indexOf('>'); end != (msg.length()-1); end = msg.indexOf('>')) {
+			sndMsg = msg;
+			sndMsg.remove(end);
+			Serial.println(sndMsg);
+			set_event(sndMsg);
+			msg.remove(0, end);
+		}
+		msg.remove(end);
 		Serial.println(msg);
+		set_event(msg);
+	}
+}
+
+void Wireless::set_event(String msg)
+{
 	if (compare(msg, "0") == 0) { //request
 		delMessage(msg, 1, 1);
 		if (compare(msg, mac) == 0) {
-			delMessage(msg, mac.length(), 0);
-			switch (actionCheck(&msg)) {
-			case eENTRYGATE:
-				delMessage(msg, 2, 2);
-				sndMsg = ALLPLACE;
-				sndMsg += " ";
-				sndMsg += msg;
-				Event_generator::set_event(sndMsg);
-				Event_generator::set_event(msgENTRYGATEOPEN);
-				break;
-			default:
-				break;
-			}
+			delMessage(msg, mac.length(), 1);
+			Event_generator::set_event(msg);
 		}
 	}
 }
@@ -267,5 +277,5 @@ void Wireless::sendMessageToWiFi(String message)
 void Wireless::msgHeader(String type, String * sendmsg)
 {
 	*sendmsg = type;
-	*sendmsg += mac;
+	pInsStr(sendmsg, mac);
 }

@@ -3,63 +3,56 @@
 
 #define SERVER_IP    192,168,1,41
 
-unsigned char Device::total_ = 0;
 String Event_generator::Buff[0x10];
 unsigned char Event_generator::readPtr = 0;
 unsigned char Event_generator::writePtr = 0 ;
+
+Device * Event_checker::dev_instance[0x10] = { nullptr, };
+int Event_checker::timeTick = false;
+
 IPAddress server(SERVER_IP);
-String inputString = "" ;
 
 Factory * factory = new Factory;
 Device * dev_instance[0xF] = { nullptr, };
 
-int timeTick = false;
+String inputString ="" ;
 
 void timerCallback()
 {
-  timeTick = true;
+  Event_checker::timeTick = true;
 }
 
-void setup() {
-  // put your setup code here, to run once:
+void setup(void)
+{
   Serial.begin(9600);
   inputString.reserve(20);
   Timer3.initialize(200000);         // initialize timer1, and set a 1/2 second period
   Timer3.attachInterrupt(timerCallback);
 
-  dev_instance[0] = factory->createConsoleInstance();
-  dev_instance[1] = factory->createGateServoInstance(EntryGateServoPin);
-  dev_instance[2] = factory->createGateServoInstance(ExitGateServoPin);
-  dev_instance[3] = factory->createParkingPlaceInstance(1, ParkingStall1LED, Stall1SensorPin);
-  dev_instance[4] = factory->createParkingPlaceInstance(2, ParkingStall2LED, Stall2SensorPin);
-  dev_instance[5] = factory->createParkingPlaceInstance(3, ParkingStall3LED, Stall3SensorPin);
-  dev_instance[6] = factory->createParkingPlaceInstance(4, ParkingStall4LED, Stall4SensorPin);
-  dev_instance[7] = factory->createWirelessInstance("LGArchi_Guest1","16swarchitect", server, 7777);
+  Event_checker::dev_instance[0] = factory->createConsoleInstance();
+  Event_checker::dev_instance[1] = factory->createGateServoInstance(EntryGateServoPin);
+  Event_checker::dev_instance[2] = factory->createGateServoInstance(ExitGateServoPin);
+  Event_checker::dev_instance[3] = factory->createParkingPlaceInstance(1, ParkingStall1LED, Stall1SensorPin);
+  Event_checker::dev_instance[4] = factory->createParkingPlaceInstance(2, ParkingStall2LED, Stall2SensorPin);
+  Event_checker::dev_instance[5] = factory->createParkingPlaceInstance(3, ParkingStall3LED, Stall3SensorPin);
+  Event_checker::dev_instance[6] = factory->createParkingPlaceInstance(4, ParkingStall4LED, Stall4SensorPin);
+  Event_checker::dev_instance[7] = factory->createWirelessInstance("LGArchi_Guest1","16swarchitect", server, 7777);
 }
 
 void loop(void)
 {
-  String * message = nullptr;
-  Device ** loop = dev_instance;
-  if (message = Event_generator::get_event()) {
-    for (; *loop != nullptr; loop++) (*loop)->dispatcher(*message) ;
-  }
-  if (timeTick) {
-    Event_generator::set_event(TIME_EVENT);
-    timeTick = false;
-  }
+  Event_checker::check();
 }
 
 void serialEvent() {
   while (Serial.available()) {
     char inch = (char)Serial.read();
     if (inch == '\n') {
-      // event occurred 
-      Event_generator::set_event("ser " + inputString);
+      Event_generator::set_event("c " + inputString);
       inputString = "" ;
     }
-    else if (inch != '\0'){
+    else if (inch != '\0')
       inputString += inch;
-    }
   }
 }
+

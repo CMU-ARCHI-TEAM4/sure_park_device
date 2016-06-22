@@ -5,15 +5,14 @@ Event_generator::Event_generator()
 {
 }
 
-
 Event_generator::~Event_generator()
 {
 }
 
 unsigned char Event_generator::set_event(String message)
 {
-	if (compare(message, TIME_EVENT))
-		Serial.println(" set event:" + message);
+	if (compare(message, TIMETICK))
+		Serial.println("set event:" + message);
 
 	if ((writePtr + 1) == readPtr) {
 		Serial.println("Bacuse of buffer overflow, Data will be lost.") ; 
@@ -36,24 +35,35 @@ String * Event_generator::get_event()
 	return nullptr;
 }
 
-
-Device::Device()
-{
-	id_ = total_++;
-}
-
-
-Device::~Device()
-{
-}
-
-
 Event_checker::Event_checker()
 {
 }
 
-
 Event_checker::~Event_checker()
+{
+}
+
+void Event_checker::check()
+{
+	String * message = nullptr;
+	Device ** loop = dev_instance;
+	if (message = Event_generator::get_event()) {
+		//Serial.println("get event:" + *message);
+		for (; *loop != nullptr; loop++) (*loop)->dispatcher(*message);
+	}
+
+	if (timeTick) {
+		Event_generator::set_event(TIMETICK);
+		timeTick = false;
+	}
+}
+
+
+Device::Device()
+{
+}
+
+Device::~Device()
 {
 }
 
@@ -62,17 +72,14 @@ Factory::Factory()
 {
 }
 
-
 Factory::~Factory()
 {
 }
-
 
 Device* Factory::createConsoleInstance()
 {
 	return new Console;
 }
-
 
 Device * Factory::createGateServoInstance(unsigned char gateName)
 {
@@ -88,3 +95,6 @@ Device * Factory::createWirelessInstance(char * ssid, char * password, IPAddress
 {
 	return new Wireless(ssid, password, server, portId);
 }
+
+
+unsigned char Device::total_ = 0;

@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "eda.h"
 
+#define PARKED				1
+#define EMPTY				0
 #define CHATTERINGTIME		5000/200	
 
 ParkingPlace::ParkingPlace(unsigned char num, unsigned char pinNum, unsigned char sensorPinNum)
@@ -8,11 +10,15 @@ ParkingPlace::ParkingPlace(unsigned char num, unsigned char pinNum, unsigned cha
 {
 	long val;
 	//myName += PARKINGPLACE;
-	myName = num;
+	myName = PARKING;
 	parkingNum = num;
+	Serial.println("parking place " + parkingNum);
 	ledNum = pinNum;
 	sensorPin = sensorPinNum;
 	pinMode(ledNum, OUTPUT);
+	digitalWrite(ledNum, LOW);
+
+	id_ = total_++;
 
 	val = ProximityVal(sensorPin);
 	if (val < 70) presentParkingStatus = 1;
@@ -26,67 +32,78 @@ ParkingPlace::~ParkingPlace()
 
 unsigned char ParkingPlace::dispatcher(String message)
 {
-	if (0 == compare(message, myName)) {
-		delMessage(message, myName.length(), 1);
+	if (0 == msgCompare(message, 1, myName)) {
 		engine(&message);
 	}
-	if (0 == compare(message, ALLPLACE)) {
-		delMessage(message, sizeof(ALLPLACE), 0);
+	else if (0 == msgCompare(message, 1, ALLPARKING)) {
 		engine(&message);
 	}
-	else
+	else if (0 == msgCompare(message, 1, TIMETICK)) {
+		message = myName;
+		InsStr(message, STALLSENS);
 		engine(&message);
+		return 1;
+	}
 	return 0;
 }
 
 void ParkingPlace::engine(String * message)
 {
 	long val;
-	unsigned char carIn = false;
+	unsigned char carIn = EMPTY;
 	String sndMsg = WIFI;
-	sndMsg += " ";
 
-	if (pCompare(message, ON) == 0) {
-		digitalWrite(ledNum, HIGH);
+	if (0 == msgCompare(*message, 2, parkingNum)) {
+		if (0 == msgCompare(*message, 4, LEDON)) {
+			digitalWrite(ledNum, HIGH);
+		}
+		else if (0 == msgCompare(*message, 4, LEDOFF)) {
+			digitalWrite(ledNum, LOW);
+		}
 	}
-	else if (pCompare(message, OFF) == 0) {
-		digitalWrite(ledNum, LOW);
+	else if (0 == msgCompare(*message, 1, ALLPARKING)) {
+		if (confirmationID == "") {
+			pDelMassge(message, 1, 1);
+			confirmationID = *message;
+		}
+		else if ((EMPTY == presentParkingStatus) && (0 == msgCompare(*message, 2, confirmationID))) {
+			confirmationID = "";
+			digitalWrite(ledNum, LOW);
+		}
 	}
-	else if (pCompare(message, STALLSENSOR) == 0) {
-		chatteringTime = ~chatteringTime;
-		// read stall sensor
-	}
-	else if (0 == pCompare(message, myName)) {
-		digitalWrite(ledNum, HIGH);
-		pDelMassge(message, myName.length(), +1);
-		confirmationID = *message;
-	}
-	else if (pCompare(message, TIME_EVENT) == 0) {
+	else if (0 == msgCompare(*message, 2, STALLSENS)) {
 		if (chatteringTime) {
 			chatteringTime--;
 		}
 		else {
 			val = ProximityVal(sensorPin);
 			if (val < 65) 
-				carIn = 1;
+				carIn = PARKED;
 			else 
-				carIn = 0;
+				carIn = EMPTY ;
 
-			if (presentParkingStatus != carIn) {
+			if ((presentParkingStatus != carIn )&& (confirmationID != "") ){
 				presentParkingStatus = carIn;
-				if (carIn) {
-					Event_generator::set_event(myName+" off");
-				}
 				chatteringTime = 2000 / 200;
-				sndMsg += PARKING;
-				sndMsg += carIn;
-				sndMsg += " ";
-				sndMsg += myName;
-				sndMsg += " ";
-				sndMsg += "0 ";// charging infomation
-				sndMsg += confirmationID;
-				sndMsg += "0";
+				InsStr(sndMsg, PARKING);
+				InsStr(sndMsg, carIn);
+				InsStr(sndMsg, parkingNum);
+				InsStr(sndMsg, "0");//charging infomation
+				InsStr(sndMsg, confirmationID);
 				Event_generator::set_event(sndMsg);
+				if (PARKED == carIn) {
+					sndMsg = PARKING;
+					InsStr(sndMsg, parkingNum);
+					InsStr(sndMsg, confirmationID);
+					InsStr(sndMsg, LEDOFF);
+					Event_generator::set_event(sndMsg);
+					sndMsg = ALLPARKING;
+					InsStr(sndMsg, confirmationID);
+					Event_generator::set_event(sndMsg);
+				}
+				else {
+					confirmationID = "";
+				}
 			}
 		}
 	}

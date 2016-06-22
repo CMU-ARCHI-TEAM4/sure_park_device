@@ -18,13 +18,39 @@
 #define delMessage(x,y,z)		x.erase(0, y + z);
 #define pCompare(x,y)			x->find(y)
 #define pDelMassge(x,y,z)		x->erase(0, y + z);
-#define MASTERCODE				"ma"
 #else
 #define compare(x,y)			x.indexOf(y)
 #define delMessage(x,y,z)		x.remove(0, y + z);
 #define pCompare(x,y)			x->indexOf(y)
 #define pDelMassge(x,y,z)		x->remove(0, y + z);
 #endif
+
+inline int msgPoint(String src, int order) {
+	int orderLoop, position = 0;
+	for (orderLoop = 0; orderLoop < (order - 1); orderLoop++) {
+#ifdef UNITTEST
+		position = src.find(' ', position);
+#else
+		position = src.indexOf(' ', position);
+#endif
+		position++;
+	}
+	return position;
+}
+
+inline int msgCompare(String src, int order, String dest)
+{
+	int position ;
+	position = msgPoint(src, order);
+#ifdef UNITTEST
+	return (src.substr(position) == dest) ? 0 : 1;
+#else
+	return (src.substring(position, position+dest.length()) == dest) ? 0 : 1;
+#endif
+}
+
+#define InsStr(x,y)			do{x +=" ";x += y;}while(0);
+#define pInsStr(x,y)			do{*x +=" ";*x += y;}while(0);
 
 // Arduino device pin set
 #define ParkingStall1LED		22
@@ -43,69 +69,44 @@
 #define Stall2SensorPin			31
 #define Stall3SensorPin			32
 #define Stall4SensorPin			33
+#define EntryGateServoPin		5
+#define ExitGateServoPin		6
+#define Open					90
+#define Close					0
 
+#define OPEN					"0"
+#define CLOSE					"1"
 
-// device name
-#define CONSOLE			"ser"
-#define GATESERVO		"gse"
-//#define PARKINGPLACE	""
-#define TIME_EVENT		"tim"
-#define WIFI			"wif"
-#define ALLPLACE		"all"
+#define DETECT					"0"
+#define NOTDETECT				"1"
 
-// second device name
-#define ENTRY			"entry"
-#define EXIT			"exit"
-#define IR_DETECT		"beam"
-#define STALLSENSOR		"stall"
+#define	LEDON					"0"
+#define LEDOFF					"1"
+// Device information
+#define msgREQUEST		"0"
+#define msgRESPONSE		"1"
 
-// WIFI event message
-#define msgREQUEST		"0 "
-#define msgRESPONSE		"1 "
+#define DEVICEINFO		"0"
+#define SERVERCONFIG	"1"
+#define HEARTBEAT		"2"
+#define ENTRYSENSOR		"3"
 
-#define READ_WIFI		"wifir"
-#define DEVICEINFO		"0 "
-#define ENTRYSENSOR		"3 "
-#define EXITSENSOR		"8 "
-#define ENTRYGATE		"5 "
-#define EXITGATE		"7 "
-#define PARKING			"6 "
-#define SERIALMODE		"off"
+#define ENTRYGATE		"5"
+#define PARKING			"6"
+#define EXITGATE		"7"
+#define EXITSENSOR		"8"
+#define TIMESYNC		"9"
+#define TIMETICK		"a"
+#define WIFI			"w"
+#define CONSOLE			"c"
+#define READWIFI		"r"
+#define ALLPARKING		"p"
+#define STALLSENS		"s"
+#define TIMEINFO		"0000-00-00-00-00-00"
+
 
 // value
-#define ON				"on"
-#define OFF				"off"
 
-// default message define 
-#define msgEXITGATEOPEN		"gseexit on"
-#define msgEXITGATECLOSE	"gseexit off"
-#define msgENTRYGATEOPEN	"gseentry on"
-#define msgENTRYGATECLOSE	"gseentry off"
-
-#define msgParkingPlace1On	"pla1 on"
-#define msgParkingPlace2On	"pla2 on"
-#define msgParkingPlace3On	"pla3 on"
-#define msgParkingPlace4On	"pla4 on"
-#define msgParkingPlace1Off	"pla1 off"
-
-// System configuration value
-#define EntryGateServoPin 5
-#define ExitGateServoPin 6
-#define Open  90
-#define Close 0
-
-class Event_generator
-{
-public:
-	Event_generator();
-	~Event_generator();
-	static unsigned char set_event(String message);
-	static String * get_event();
-private:
-	static String Buff[0x10];
-	static unsigned char readPtr;
-	static unsigned char writePtr;
-};
 
 class Device
 {
@@ -113,18 +114,12 @@ public:
 	Device();
 	~Device();
 	virtual unsigned char dispatcher(String message) = 0;
-	virtual void engine(String * message) = 0 ;
+	virtual void engine(String * message) = 0;
 	unsigned char id_;
 	static unsigned char total_;
 protected:
 };
 
-class Event_checker
-{
-public:
-	Event_checker();
-	~Event_checker();
-};
 
 class Console :
 	public Device
@@ -173,7 +168,7 @@ protected:
 private:
 	unsigned char ledNum;
 	unsigned char sensorPin;
-	unsigned char parkingNum;
+	String parkingNum;
 	unsigned char presentParkingStatus;
 	unsigned char chatteringTime;
 	String confirmationID;
@@ -191,6 +186,7 @@ public:
 	void engine(String * message);
 protected:
 	void connectionCheck();
+	void set_event(String msg);
 	IPAddress ip;
 	IPAddress subnet;
 	long rssi;
@@ -213,16 +209,6 @@ protected:
 	void sendMessageToWiFi(String message);
 };
 
-class watch
-{
-public:
-	watch();
-	~watch();
-	unsigned char dispatcher(String message);
-	void engine(String * message);
-};
-
-
 class Factory
 {
 public:
@@ -235,3 +221,25 @@ public:
 };
 
 
+class Event_generator
+{
+public:
+	Event_generator();
+	~Event_generator();
+	static unsigned char set_event(String message);
+	static String * get_event();
+private:
+	static String Buff[0x10];
+	static unsigned char readPtr;
+	static unsigned char writePtr;
+};
+
+class Event_checker
+{
+public:
+	Event_checker();
+	~Event_checker();
+	static void check();
+	static int timeTick;
+	static Device * dev_instance[0x10];
+};
