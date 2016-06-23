@@ -93,13 +93,16 @@ void GateServo::engine(String * message)
 			sensor_status = state;
 			chatteringTime = 2000/200 ;
 			if (state)
-				gateCloseTime = 5000 / 200;
+				gateCloseTime = 3000 / 200;
 			else {
 				sndMsg = mergeStr(3, WIFI, (EntryGateServoPin == gateNum) ? ENTRYSENSOR : EXITSENSOR, DETECT);
 				Event_generator::set_event(sndMsg);
 				if (ExitGateServoPin == gateNum) {
 					sndMsg = mergeStr(2, (EntryGateServoPin == gateNum) ? ENTRYGATE : EXITGATE, OPEN);
 					Event_generator::set_event(sndMsg);
+				} 
+				else {
+					Serial.println("Car is detected");
 				}
 			}
 		}

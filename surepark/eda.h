@@ -124,6 +124,8 @@ inline String mergeStr(int num, ...) {
 #define EEPROMMSG		"em"
 #define TIMEINFO		"0000-00-00-00-00-00"
 
+#define SYSCONSOLE		"tony"
+
 class Device
 {
 public:
@@ -144,6 +146,7 @@ public:
 	~Console();
 	unsigned char dispatcher(String message);
 	void engine(String * message);
+	void serial_engine(String * message);
 };
 
 class GateServo :

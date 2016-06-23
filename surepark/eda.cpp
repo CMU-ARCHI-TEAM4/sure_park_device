@@ -52,8 +52,8 @@ Event_generator::~Event_generator()
 
 unsigned char Event_generator::set_event(String message)
 {
-	if (compare(message, TIMETICK))
-		Serial.println("set event:" + message);
+	//if (compare(message, TIMETICK))
+	//	Serial.println("set event:" + message);
 
 	if ((writePtr + 1) == readPtr) {
 		Serial.println("Bacuse of buffer overflow, Data will be lost.") ; 

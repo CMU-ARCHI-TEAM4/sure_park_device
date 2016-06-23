@@ -11,7 +11,7 @@
 #define CHATTERINGTIME		5000/200	
 
 ParkingPlace::ParkingPlace(unsigned char num, unsigned char pinNum, unsigned char sensorPinNum)
-	:chatteringTime(0)
+	:chatteringTime(0), presentParkingStatus(EMPTY)
 {
 	//myName += PARKINGPLACE;
 	myName = PARKING;
@@ -72,17 +72,18 @@ void ParkingPlace::engine(String * message)
 	String sndMsg ;
 
 	if (0 == msgCompare(*message, 1, ALLPARKING)) {
-		Serial.print(ledNum - 21); Serial.print(' ');
 		pDelMassge(message, 1, 1);
-		Serial.println(*message + ">");
+		//Serial.println(*message + ">");
 		if (confirmationID == "") {
 			confirmationID = *message;
+			Serial.println(confirmationID + " ");
 		}
 		else {
+			Serial.print(ledNum - 21); Serial.print(' ');  Serial.print(':');
 			digitalWrite(ledNum, LOW);
-			Serial.println(confirmationID + "#");
 			if (EMPTY == presentParkingStatus)
 				confirmationID = "";
+			Serial.println(confirmationID+" ");
 		}
 	}
 	else if (0 == msgCompare(*message, 2, parkingNum)) {
@@ -110,8 +111,6 @@ void ParkingPlace::engine(String * message)
 			if (stableTime) {
 				stableTime--;
 				sensorMiddleVal = val;
-				if (stableTime)
-					Serial.println(parkingNum + val);
 			}
 			else if  (confirmationID != "")
 				carIn = (val < (sensorMiddleVal-40)) ? PARKED : EMPTY;
@@ -126,8 +125,12 @@ void ParkingPlace::engine(String * message)
 					durationTime = 1 ;
 					sndMsg = mergeStr(2, ALLPARKING, confirmationID.c_str());
 					Event_generator::set_event(sndMsg);
+					sndMsg = mergeStr(2, ENTRYGATE, CLOSE);
+					Event_generator::set_event(sndMsg);
 				}
 				else {
+					sndMsg = mergeStr(4, "Car of", parkingNum.c_str(), "is out. parked time is", String(durationTime).c_str(), "min");
+					Serial.println(sndMsg);
 					confirmationID = "";
 				}
 			}

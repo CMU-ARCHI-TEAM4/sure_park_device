@@ -241,18 +241,21 @@ void Wireless::readData()
 	}
 	if (available) {
 		if (msg.length()) {
-			for (end = msg.indexOf('>'); end != (msg.length() - 1); end = msg.indexOf('>')) {
+			/*for (end = msg.indexOf('>'); end != (msg.length() - 1); end = msg.indexOf('>')) {
 				sndMsg = msg;
 				sndMsg.remove(end);
 				if (msgCompare(sndMsg, 3, HEARTBEAT))
 					Serial.println(sndMsg);
 				set_event(sndMsg);
 				msg.remove(0, end);
+			}*/
+			end = msg.indexOf('>');
+			if (end > 0) {
+				msg.remove(end);
+				if (msgCompare(msg, 3, HEARTBEAT))
+					Serial.println(msg);
+				set_event(msg);
 			}
-			msg.remove(end);
-			if (msgCompare(msg, 3, HEARTBEAT))
-				Serial.println(msg);
-			set_event(msg);
 		}
 	}
 }
@@ -270,8 +273,10 @@ void Wireless::set_event(String msg)
 
 void Wireless::sendMessageToWiFi(String message)
 {
-	if(msgCompare(message,3, HEARTBEAT))
-		Serial.println(message);
+	if (msgCompare(message, 3, HEARTBEAT)) {
+		//Serial.println(message);
+		pingEchoTime += 5;
+	}
 	if (!serialMode)client.println(message);
 }
 
