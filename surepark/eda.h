@@ -52,6 +52,29 @@ inline int msgCompare(String src, int order, String dest)
 #define InsStr(x,y)			do{x +=" ";x += y;}while(0);
 #define pInsStr(x,y)			do{*x +=" ";*x += y;}while(0);
 
+inline String mergeStr(int num, ...) {
+	va_list ap;
+	String sumStr = "";
+	char* loopStr;
+	int i;
+#ifdef UNITTEST
+	__crt_va_start(ap, num);
+	for (loopStr = __crt_va_arg(ap, char*); num > 0; num--, loopStr = __crt_va_arg(ap, char*)) {
+		for (; *loopStr != '\0'; loopStr++) sumStr += *loopStr;
+		sumStr += " ";
+	}
+	__crt_va_end(ap);
+#else
+	va_start(ap, num);
+	for (loopStr = va_arg(ap, char*); num > 0; num--, loopStr = va_arg(ap, char*)) {
+		for (; *loopStr != '\0'; loopStr++) sumStr += *loopStr;
+		if(1 != num ) sumStr += " ";
+	}
+	va_end(ap);
+#endif
+	return sumStr;
+}
+
 // Arduino device pin set
 #define ParkingStall1LED		22
 #define ParkingStall2LED		23
@@ -104,10 +127,6 @@ inline int msgCompare(String src, int order, String dest)
 #define STALLSENS		"s"
 #define TIMEINFO		"0000-00-00-00-00-00"
 
-
-// value
-
-
 class Device
 {
 public:
@@ -119,7 +138,6 @@ public:
 	static unsigned char total_;
 protected:
 };
-
 
 class Console :
 	public Device
@@ -164,7 +182,8 @@ public:
 	void engine(String * message);
 protected:
 	String myName;
-	long ProximityVal(unsigned char Pin);
+	int ProximityVal(unsigned char Pin);
+	int RealEstmate(unsigned char pin);
 private:
 	unsigned char ledNum;
 	unsigned char sensorPin;
@@ -173,6 +192,15 @@ private:
 	unsigned char chatteringTime;
 	String confirmationID;
 
+	int sumVal[8] = { 0, };
+	int cnt = 1;
+	int loop = 0;
+
+	int sensorMiddleVal;
+
+	int durationTime;
+	int durationSec;
+	int stableTime;
 };
 
 class Wireless :
@@ -197,7 +225,7 @@ protected:
 	int serverConnect;
 	String myName;
 	int pingEchoTime;
-	char * routerSSID ;
+	char * routerSSID;
 	char * routerPassword;
 	String mac;
 
@@ -209,12 +237,24 @@ protected:
 	void sendMessageToWiFi(String message);
 };
 
+
+class eeprom :
+	public Device
+{
+public:
+	eeprom();
+	~eeprom();
+	unsigned char dispatcher(String message);
+	void engine(String * message);
+};
+
+
 class Factory
 {
 public:
 	Factory();
 	~Factory();
-	Device * createConsoleInstance() ;
+	Device * createConsoleInstance();
 	Device * createGateServoInstance(unsigned char gateName);
 	Device * createParkingPlaceInstance(unsigned char num, unsigned char pinNum, unsigned char sensorPinNum);
 	Device * createWirelessInstance(char * ssid, char * password, IPAddress server, int portId);
@@ -243,3 +283,4 @@ public:
 	static int timeTick;
 	static Device * dev_instance[0x10];
 };
+

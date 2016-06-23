@@ -1,6 +1,47 @@
 #include "stdafx.h"
 #include "eda.h"
 
+
+Device::Device()
+{
+}
+
+Device::~Device()
+{
+}
+
+
+Factory::Factory()
+{
+}
+
+Factory::~Factory()
+{
+}
+
+Device* Factory::createConsoleInstance()
+{
+	return new Console;
+}
+
+Device * Factory::createGateServoInstance(unsigned char gateName)
+{
+	return new GateServo(gateName);
+}
+
+Device * Factory::createParkingPlaceInstance(unsigned char num, unsigned char pinNum, unsigned char sensorPinNum)
+{
+	return new ParkingPlace(num, pinNum, sensorPinNum);
+}
+
+Device * Factory::createWirelessInstance(char * ssid, char * password, IPAddress server, int portId)
+{
+	return new Wireless(ssid, password, server, portId);
+}
+
+
+unsigned char Device::total_ = 0;
+
 Event_generator::Event_generator()
 {
 }
@@ -57,44 +98,3 @@ void Event_checker::check()
 		timeTick = false;
 	}
 }
-
-
-Device::Device()
-{
-}
-
-Device::~Device()
-{
-}
-
-
-Factory::Factory()
-{
-}
-
-Factory::~Factory()
-{
-}
-
-Device* Factory::createConsoleInstance()
-{
-	return new Console;
-}
-
-Device * Factory::createGateServoInstance(unsigned char gateName)
-{
-	return new GateServo(gateName);
-}
-
-Device * Factory::createParkingPlaceInstance(unsigned char num, unsigned char pinNum, unsigned char sensorPinNum)
-{
-	return new ParkingPlace(num, pinNum, sensorPinNum);
-}
-
-Device * Factory::createWirelessInstance(char * ssid, char * password, IPAddress server, int portId)
-{
-	return new Wireless(ssid, password, server, portId);
-}
-
-
-unsigned char Device::total_ = 0;

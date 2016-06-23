@@ -1,10 +1,6 @@
 #include "stdafx.h"
 #include "eda.h"
 
-#define msgEXITGATEOPEN			"7 0"
-#define msgENTRYGATECLOSE		"5 1"
-#define msgEXITGATECLOSE		"7 1"
-
 GateServo::GateServo(unsigned char pinNum)
 	: chatteringTime(2000/200), gateCloseTime(0)
 {
@@ -61,35 +57,29 @@ void GateServo::engine(String * message)
 {
 	//TODO : insert engine code
 	int state = 0;
-	String sndMsg = WIFI;
-	String secMsg;
+	String sndMsg ;
 
 	if(0 == msgCompare(*message,2,OPEN)){
 		gateObj->write(Open); 
 		digitalWrite(greenLED, LOW);
 		digitalWrite(redLED, HIGH);
 
-		secMsg = PARKING;
 		pDelMassge(message, 2, 2);
-		InsStr(secMsg, *message);
-		InsStr(secMsg, LEDON);
-		Event_generator::set_event(secMsg);
+		sndMsg = mergeStr(3, PARKING, message->c_str(), LEDON);
+		Event_generator::set_event(sndMsg);
 
-		secMsg = ALLPARKING;
 		pDelMassge(message, 1, 1);
-		InsStr(secMsg, *message);
-		Event_generator::set_event(secMsg);
+		sndMsg = mergeStr(2, ALLPARKING, message->c_str());
+		Event_generator::set_event(sndMsg);
 
-		InsStr(sndMsg, (EntryGateServoPin == gateNum) ? ENTRYGATE : EXITGATE);
-		InsStr(sndMsg, OPEN);
+		sndMsg = mergeStr(3, WIFI, (EntryGateServoPin == gateNum) ? ENTRYGATE : EXITGATE, OPEN);
 		Event_generator::set_event(sndMsg);
 	}
 	else if (0 == msgCompare(*message,2,CLOSE)) {
 		gateObj->write(Close);
 		digitalWrite(greenLED, HIGH);
 		digitalWrite(redLED, LOW);
-		InsStr(sndMsg, (EntryGateServoPin == gateNum) ? ENTRYGATE : EXITGATE);
-		InsStr(sndMsg, CLOSE);
+		sndMsg = mergeStr(3, WIFI, (EntryGateServoPin == gateNum) ? ENTRYGATE : EXITGATE, CLOSE);
 		Event_generator::set_event(sndMsg);
 	}
 	else if (0 == msgCompare(*message, 2, ENTRYSENSOR)) {
@@ -103,18 +93,14 @@ void GateServo::engine(String * message)
 			chatteringTime = 2000/200 ;
 			if (state)
 				gateCloseTime = 5000 / 200;
-			else 
-				if (EntryGateServoPin == gateNum) {
-					InsStr(sndMsg, ENTRYSENSOR);
-					InsStr(sndMsg, DETECT);
+			else {
+				sndMsg = mergeStr(3, WIFI, (EntryGateServoPin == gateNum) ? ENTRYSENSOR : EXITSENSOR, DETECT);
+				Event_generator::set_event(sndMsg);
+				if (ExitGateServoPin == gateNum) {
+					sndMsg = mergeStr(2, (EntryGateServoPin == gateNum) ? ENTRYGATE : EXITGATE, OPEN);
 					Event_generator::set_event(sndMsg);
 				}
-				else {
-					Event_generator::set_event(msgEXITGATEOPEN);
-					InsStr(sndMsg, EXITSENSOR);
-					InsStr(sndMsg, DETECT);
-					Event_generator::set_event(sndMsg);
-				}
+			}
 		}
 		else if (chatteringTime){
 			chatteringTime--;
@@ -123,8 +109,8 @@ void GateServo::engine(String * message)
 		if (gateCloseTime) {
 			gateCloseTime--;
 			if (0 == gateCloseTime) {
-				InsStr(sndMsg, (EntryGateServoPin == gateNum) ? ENTRYGATE : EXITGATE);
-				Event_generator::set_event((EntryGateServoPin == gateNum)?msgENTRYGATECLOSE:msgEXITGATECLOSE);
+				sndMsg = mergeStr(2, (EntryGateServoPin == gateNum) ? ENTRYGATE : EXITGATE, CLOSE);
+				Event_generator::set_event(sndMsg);
 			}
 		}
 	}

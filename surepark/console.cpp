@@ -17,6 +17,7 @@ unsigned char Console::dispatcher(String message)
 {
 	//TODO : insert dispatcher
 	if (0 == msgCompare(message, 1, CONSOLE)) {
+		// in 3 id
 		engine(&message);
 	}
 	else {

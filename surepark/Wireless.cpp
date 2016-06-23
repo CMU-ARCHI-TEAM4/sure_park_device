@@ -88,9 +88,7 @@ void Wireless::connectionCheck()
 		if (client.connect(serverIp, serverPort) == SUCCESS) {
 			Serial.println("Sever is connected");
 
-			InsStr(sndMsg, mac);
-			InsStr(sndMsg, DEVICEINFO);
-			InsStr(sndMsg, mac);
+			sndMsg = mergeStr(4, msgREQUEST, mac.c_str(), DEVICEINFO, mac.c_str());
 			InsStr(sndMsg, Device::total_);
 			sendMessageToWiFi(sndMsg);
 			pingEchoTime = 0;
@@ -145,48 +143,41 @@ void Wireless::connectionCheck()
 
 void Wireless::engine(String * message)
 {
-	String sndMsg = msgREQUEST;
+	String sndMsg ;
 
 	if (!serialMode) 
 		connectionCheck();
 
 	switch (actionCheck(message)) {
 	case ePINGECHO:
-		InsStr(sndMsg, mac);
-		InsStr(sndMsg, HEARTBEAT);
-		InsStr(sndMsg, TIMEINFO);
+		sndMsg = mergeStr(4, msgREQUEST, mac.c_str(), HEARTBEAT, TIMEINFO);
 		sendMessageToWiFi(sndMsg);
 		break;
 	case eENTRYSENSOR:
-		InsStr(sndMsg, mac);
 		pDelMassge(message, 1, 1);
-		InsStr(sndMsg, *message);
+		sndMsg = mergeStr(3, msgREQUEST, mac.c_str(), message->c_str());
 		sendMessageToWiFi(sndMsg);
 		break;
 	case eEXITSENSOR :
-		InsStr(sndMsg, mac);
 		pDelMassge(message, 1, 1);
-		InsStr(sndMsg, *message);
+		sndMsg = mergeStr(3, msgREQUEST, mac.c_str(), message->c_str());
 		sendMessageToWiFi(sndMsg);
 		break;
 	case eCONFIRMATION:
 		break;
 	case eENTRYGATE:
-		InsStr(sndMsg, mac);
 		pDelMassge(message, 1, 1);
-		InsStr(sndMsg, *message);
+		sndMsg = mergeStr(3, msgREQUEST, mac.c_str(), message->c_str());
 		sendMessageToWiFi(sndMsg);
 		break;
 	case eEXITGATE:
-		InsStr(sndMsg, mac);
 		pDelMassge(message, 1, 1);
-		InsStr(sndMsg, *message);
+		sndMsg = mergeStr(3, msgREQUEST, mac.c_str(), message->c_str());
 		sendMessageToWiFi(sndMsg);
 		break;
 	case ePARKING:
-		InsStr(sndMsg, mac);
 		pDelMassge(message, 1, 1);
-		InsStr(sndMsg, *message);
+		sndMsg = mergeStr(3, msgREQUEST, mac.c_str(), message->c_str());
 		sendMessageToWiFi(sndMsg);
 		break;
 	case eSERIALMOD :
@@ -247,12 +238,14 @@ void Wireless::readData()
 		for (end = msg.indexOf('>'); end != (msg.length()-1); end = msg.indexOf('>')) {
 			sndMsg = msg;
 			sndMsg.remove(end);
-			Serial.println(sndMsg);
+			if (msgCompare(sndMsg, 3, HEARTBEAT))
+				Serial.println(sndMsg);
 			set_event(sndMsg);
 			msg.remove(0, end);
 		}
 		msg.remove(end);
-		Serial.println(msg);
+		if (msgCompare(msg, 3, HEARTBEAT))
+			Serial.println(msg);
 		set_event(msg);
 	}
 }
@@ -270,7 +263,8 @@ void Wireless::set_event(String msg)
 
 void Wireless::sendMessageToWiFi(String message)
 {
-	Serial.println(message);
+	if(msgCompare(message,3, HEARTBEAT))
+		Serial.println(message);
 	if (!serialMode)client.println(message);
 }
 
