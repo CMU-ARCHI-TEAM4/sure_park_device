@@ -3,6 +3,7 @@
 
 GateServo::GateServo(unsigned char pinNum)
 	: chatteringTime(2000/200), gateCloseTime(0)
+	, flipFlop(0)
 {
 	gateObj = new Servo ;
 	gateObj->attach(pinNum);
@@ -112,6 +113,16 @@ void GateServo::engine(String * message)
 				sndMsg = mergeStr(2, (EntryGateServoPin == gateNum) ? ENTRYGATE : EXITGATE, CLOSE);
 				Event_generator::set_event(sndMsg);
 			}
+		}
+	}
+	else if (0 == msgCompare(*message, 2, CONNECTINGLED)) {
+		if (0 == msgCompare(*message, 3, LEDON)) {
+			digitalWrite(greenLED, HIGH);
+			digitalWrite(redLED, LOW);
+		}
+		else {
+			digitalWrite(greenLED, LOW);
+			digitalWrite(redLED, HIGH);
 		}
 	}
 }

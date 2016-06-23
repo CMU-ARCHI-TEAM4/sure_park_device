@@ -21,7 +21,8 @@ enum WIFICMDSTATUS
 	ePARKING,
 	eEXITGATE,
 	eREADDATA,
-	eSERIALMOD
+	eSERIALMOD,
+	eEEPROM
 };
 
 
@@ -76,6 +77,7 @@ void Wireless::connectionCheck()
 {
 	int wifi_status;
 	String sndMsg = msgREQUEST;
+	int retry = 3;
 
 	switch (serverConnect) {
 	case 0:
@@ -87,11 +89,12 @@ void Wireless::connectionCheck()
 	case (1000 / 200):	// server connect
 		if (client.connect(serverIp, serverPort) == SUCCESS) {
 			Serial.println("Sever is connected");
-
 			sndMsg = mergeStr(4, msgREQUEST, mac.c_str(), DEVICEINFO, mac.c_str());
 			InsStr(sndMsg, Device::total_);
 			sendMessageToWiFi(sndMsg);
 			pingEchoTime = 0;
+			sndMsg = mergeStr(3, ENTRYGATE, CONNECTINGLED, LEDON);
+			Event_generator::set_event(sndMsg);
 		}
 		else {
 			Serial.println("connecting is failed");
@@ -101,41 +104,37 @@ void Wireless::connectionCheck()
 		break;
 	case (2000 / 200):	// wifi connect
 		wifi_status = WL_IDLE_STATUS;
-		while (wifi_status != WL_CONNECTED) {
+		while ((wifi_status != WL_CONNECTED)&&retry) {
 			Serial.println("Attempting to connect to WPA SSID");
 			wifi_status = WiFi.begin(routerSSID, routerPassword);
-			if (wifi_status != WL_CONNECTED) delay(1000);
-			// if 3 retry failed. time up..... 
+			retry--;
 		}
-		ip = WiFi.localIP();
-		subnet = WiFi.subnetMask();
-		rssi = WiFi.RSSI();
-		encryption = WiFi.encryptionType();
-		Serial.println("WL_CONNECTED");
-		break;
-	case (3000 / 200):
-		Serial.println("waiting 3sec...");
-		break;
-	case (4000 / 200):
-		Serial.println("waiting 4sec...");
-		break;
-	case (5000 / 200):
-		Serial.println("waiting 5sec...");
-		break;
-	case (6000 / 200):
-		Serial.println("waiting 6sec...");
-		break;
-	case (7000 / 200):
-		Serial.println("waiting 7sec...");
-		break;
-	case (8000 / 200):
-		Serial.println("waiting 8sec...");
-		break;
-	case (9000 / 200):
-		Serial.println("waiting 9sec...");
+		if (retry == 0) serverConnect = 150;
+		else {
+			ip = WiFi.localIP();
+			subnet = WiFi.subnetMask();
+			rssi = WiFi.RSSI();
+			encryption = WiFi.encryptionType();
+			Serial.println("WL_CONNECTED");
+		}
 		break;
 	default:
+		if ((serverConnect % 5) == 0){
+			Serial.print("waiting ");
+			Serial.print(serverConnect / 5, DEC);
+			Serial.print("sec...\n");
+		}
 		break;
+	}
+	if (serverConnect>(1000/200)) {
+		if ((serverConnect % 4) == 0) {
+			if ((serverConnect / 4) % 2) {
+				sndMsg = mergeStr(3, ENTRYGATE, CONNECTINGLED, LEDON);
+			}else{
+				sndMsg = mergeStr(3, ENTRYGATE, CONNECTINGLED, LEDOFF);
+			}
+			Event_generator::set_event(sndMsg);
+		}
 	}
 
 	serverConnect -= ((serverConnect)?1:0);
@@ -184,6 +183,10 @@ void Wireless::engine(String * message)
 		serialMode = (serialMode) ? 0 : 1;
 		if (!serialMode) serverConnect = 10000 / 200;
 		break;
+	case eEEPROM :
+		pDelMassge(message, 1, 1);
+		sndMsg = mergeStr(3, msgREQUEST, mac.c_str(), message->c_str());
+		sendMessageToWiFi(sndMsg);
 	default :
 		readData();
 		break;
@@ -205,6 +208,8 @@ int Wireless::actionCheck(String * message)
 		return ePARKING;
 	if (0 == msgCompare(*message, 2, CONSOLE))
 		return eSERIALMOD;
+	if (0 == msgCompare(*message, 2, EEPROMCNT))
+		return eEEPROM;
 	if (pingEchoTime) {
 		pingEchoTime--;
 		return eREADDATA;

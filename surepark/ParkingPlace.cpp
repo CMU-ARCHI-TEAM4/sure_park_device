@@ -13,7 +13,6 @@
 ParkingPlace::ParkingPlace(unsigned char num, unsigned char pinNum, unsigned char sensorPinNum)
 	:chatteringTime(0)
 {
-	long val;
 	//myName += PARKINGPLACE;
 	myName = PARKING;
 	parkingNum = num;
@@ -41,7 +40,7 @@ ParkingPlace::ParkingPlace(unsigned char num, unsigned char pinNum, unsigned cha
 
 	durationSec = 0;
 	durationTime = 0;
-	stableTime = 10;
+	stableTime = 20;
 }
 
 
@@ -95,7 +94,6 @@ void ParkingPlace::engine(String * message)
 		}
 	}
 	else if (0 == msgCompare(*message, 2, STALLSENS)) {
-
 		if (PARKED == presentParkingStatus) {
 			durationSec++;
 			if ((durationSec) && ((60000 / 200) == durationSec)) {
@@ -103,7 +101,6 @@ void ParkingPlace::engine(String * message)
 				durationTime++;
 			}
 		}
-
 		if (chatteringTime) {
 			chatteringTime--;
 		}
@@ -113,9 +110,11 @@ void ParkingPlace::engine(String * message)
 			if (stableTime) {
 				stableTime--;
 				sensorMiddleVal = val;
+				if (stableTime)
+					Serial.println(parkingNum + val);
 			}
 			else if  (confirmationID != "")
-				carIn = (val < (sensorMiddleVal-30)) ? PARKED : EMPTY;
+				carIn = (val < (sensorMiddleVal-40)) ? PARKED : EMPTY;
 
 			if ((presentParkingStatus != carIn )&& (confirmationID != "") ){
 				presentParkingStatus = carIn;

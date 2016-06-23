@@ -1,16 +1,10 @@
 #pragma once
 
-#ifdef UNITTEST
-#include "swRTC.h"
-#else
-//#include "core_build_options.h"
-//#include "swRTC.h"
-#endif
-
 #include "arduino.h"
 #include "WiFi.h"
 #include "SPI.h"
 #include "Servo.h"
+#include "storedMessage.h"
 
 
 #ifdef UNITTEST
@@ -55,8 +49,7 @@ inline int msgCompare(String src, int order, String dest)
 inline String mergeStr(int num, ...) {
 	va_list ap;
 	String sumStr = "";
-	char* loopStr;
-	int i;
+	char* loopStr;;
 #ifdef UNITTEST
 	__crt_va_start(ap, num);
 	for (loopStr = __crt_va_arg(ap, char*); num > 0; num--, loopStr = __crt_va_arg(ap, char*)) {
@@ -125,6 +118,10 @@ inline String mergeStr(int num, ...) {
 #define READWIFI		"r"
 #define ALLPARKING		"p"
 #define STALLSENS		"s"
+#define CONNECTINGLED	"n"
+#define EEPROM			"e"
+#define EEPROMCNT		"ec"
+#define EEPROMMSG		"em"
 #define TIMEINFO		"0000-00-00-00-00-00"
 
 class Device
@@ -170,6 +167,7 @@ private:
 	unsigned char sensor_status;
 	unsigned char chatteringTime;
 	unsigned char gateCloseTime;
+	int flipFlop;
 };
 
 class ParkingPlace :
@@ -201,6 +199,8 @@ private:
 	int durationTime;
 	int durationSec;
 	int stableTime;
+
+	int ticktok;
 };
 
 class Wireless :
@@ -238,14 +238,19 @@ protected:
 };
 
 
-class eeprom :
+class msgEEPROM :
 	public Device
 {
 public:
-	eeprom();
-	~eeprom();
+	msgEEPROM();
+	~msgEEPROM();
 	unsigned char dispatcher(String message);
 	void engine(String * message);
+protected:
+	String myName;
+	int connected;
+	storedMessage * msgObj;
+	int address;
 };
 
 
