@@ -235,18 +235,20 @@ void Wireless::readData()
 #endif
 	}
 	if (available) {
-		for (end = msg.indexOf('>'); end != (msg.length()-1); end = msg.indexOf('>')) {
-			sndMsg = msg;
-			sndMsg.remove(end);
-			if (msgCompare(sndMsg, 3, HEARTBEAT))
-				Serial.println(sndMsg);
-			set_event(sndMsg);
-			msg.remove(0, end);
+		if (msg.length()) {
+			for (end = msg.indexOf('>'); end != (msg.length() - 1); end = msg.indexOf('>')) {
+				sndMsg = msg;
+				sndMsg.remove(end);
+				if (msgCompare(sndMsg, 3, HEARTBEAT))
+					Serial.println(sndMsg);
+				set_event(sndMsg);
+				msg.remove(0, end);
+			}
+			msg.remove(end);
+			if (msgCompare(msg, 3, HEARTBEAT))
+				Serial.println(msg);
+			set_event(msg);
 		}
-		msg.remove(end);
-		if (msgCompare(msg, 3, HEARTBEAT))
-			Serial.println(msg);
-		set_event(msg);
 	}
 }
 

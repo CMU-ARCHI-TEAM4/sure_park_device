@@ -110,9 +110,12 @@ void ParkingPlace::engine(String * message)
 		else
 		{
 			val = RealEstmate(sensorPin);
-			if (stableTime) stableTime--;
+			if (stableTime) {
+				stableTime--;
+				sensorMiddleVal = val;
+			}
 			else if  (confirmationID != "")
-				carIn = (val < sensorMiddleVal) ? PARKED : EMPTY;
+				carIn = (val < (sensorMiddleVal-30)) ? PARKED : EMPTY;
 
 			if ((presentParkingStatus != carIn )&& (confirmationID != "") ){
 				presentParkingStatus = carIn;
